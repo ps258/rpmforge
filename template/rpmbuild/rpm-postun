@@ -1,0 +1,12 @@
+## Enter a post-uninstall script for the RPM if required. This is run after the RPM is uninstalled
+#
+# Note - When the last version of a package is erased, its %preun and %postun scripts will be passed an argument equal to 0 otherwise an argument of 1 (or more depending on how many versions are installed) will be passed
+#
+# This can be helpful when writing scripts that should only run when you are completely removing the package.
+# For example if you only wanted to run the script if the package was being removed add the following to the top of the script
+#
+# e.g if [ $1 -gt 0 ]
+#     then
+#       exit 0
+#     fi
+#

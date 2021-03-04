@@ -1,0 +1,9 @@
+run_cmd () {
+  if [[ $debug -eq 0 ]]; then
+    cmd=$1
+    shift
+    $cmd "$@"
+  else
+    Info "command: $@"
+  fi
+}

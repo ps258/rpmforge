@@ -1,0 +1,130 @@
+#!/bin/ksh
+ 
+base=$(dirname $(readlink -f $0))
+PATH=$PATH:$base
+FPATH=$FPATH:$base/functions
+base="$base/.."
+SRC=./src
+rpmfiles_create=0
+progname=$(basename $0)
+typeset -x LOGFILE=/tmp/${progname}-log.`date +%y%m%d`
+ 
+usage() {
+cat <<USAGE
+Usage:
+$0  -r <release number> [-c] [-h] [-d]
+$0 -r 1.0.0
+ 
+-r      Define the release number (to match the release number generated from make-release
+-c      Create the rpm-files required for the packaging
+-l      Changelog entry
+-d      Check mode - print out but do not do anything
+-p      Package the release
+-h      print out usage
+ 
+USAGE
+}
+ 
+while getopts l:r:hvcdp ans; do
+case "$ans" in
+  c) rpmfiles_create=1
+     ;;
+  d) debug=1
+     ;;
+  h) usage
+     exit 0
+     ;;
+  r) VER="$OPTARG"
+     ;;
+  l) CHANGELOG="$OPTARG"
+     ;;
+  *) print "Invalid option"
+     usage
+     exit
+esac
+done
+ 
+# script to generate the software release directory (to be used by packager to generate rpms)
+ERROR=0
+if [[ -z "$VER" ]]; then
+  Error "you must define the release directory e.g. 1.0.0\n"
+  ERROR=1
+fi
+if [[ -z "$CHANGELOG" && ! -d "./$VER" ]]; then
+  Error "You must record a changelog entry for a new release\n"
+  ERROR=1
+fi
+if [[ $ERROR -eq 1 ]]; then
+  usage
+  exit 1
+fi
+ 
+# split the $VER variable to check format of version string is correct
+echo $VER | awk -F"." '{print NF,$1,$2,$3}' | read _nofields _major _minor _build
+ 
+if [[ $_major = *+([[:alpha:]]*) || -z $_major ]];then
+  Fatal "you must define the release version in the format X.Y.Z e.g 1.0.0"
+fi
+if [[ $_minor = *+([[:alpha:]]*) || -z $_minor ]];then
+  Fatal "you must define the release version in the format X.Y.Z e.g 1.0.0"
+fi
+if [[ $_build = *+([[:alpha:]]*) || -z $_build ]];then
+  Fatal "you must define the release version in the format X.Y.Z e.g 1.0.0"
+fi
+ 
+if [[ "$_nofields" -ne 3 ]];then
+  Fatal "you must define the release version in the format X.Y.Z e.g 1.0.0"
+fi
+ 
+# copy files from source dir to versioned release dir
+if [[ -d "./$VER" ]];then
+  read ans?"Release directory ./$VER already exists do you wish to overwrite? [Y|y] : "
+  case "$ans" in
+    y|Y)
+         ;;
+    *) Fatal "Release directory ./$VER not updated"
+       exit 1
+       ;;
+  esac
+fi
+ 
+log "creating ./$VER dir"
+run_cmd mkdir -p ./$VER
+run_cmd cp -pR $SRC/* ./$VER
+# write changelog to file
+exec 5>> ./Changelog
+run_cmd print -u5 "$VER - $CHANGELOG"
+exec 5<&-
+ 
+#run_cmd echo "$CHANGELOG" >> ./Changelog
+if [[ $? -ne 0 ]]; then
+  Fatal "versioned release dir ./$VER not created and populated"
+fi
+ 
+if [[ "$rpmfiles_create" -ne 0 ]];then
+  rpmfile="./rpmbuild/rpm-files"
+  Info "Creating rpm-files in ./rpmbuild directory"
+  if [[ -f "$rpmfile" ]]; then
+    Info "$rpmfile already exists, not overwriting it. Remove $rpmfile before using this option to create an automatic one"
+  else
+    files_found=$(find src -type f -print| sed -e 's/^src//')
+    if [[ "$debug" -eq 0 ]]; then
+    cat > $rpmfile <<RPMFOUND
+%defattr(-,root,root)
+ 
+# the package files
+$files_found
+ 
+RPMFOUND
+    fi
+  fi
+fi
+ 
+if [[ -n $package ]]
+then
+  if [[ "$debug" -eq 1 ]]; then
+    echo packager -r $VER
+  else
+    packager -r $VER
+  fi
+fi

@@ -1,0 +1,4 @@
+function Fatal {
+  print "[FATAL]: $*"
+  exit 1
+}

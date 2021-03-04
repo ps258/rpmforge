@@ -1,0 +1,11 @@
+## Enter a pre-install script for the RPM if required. This is run before the RPM is installed
+#
+# Note - When the first version of a package is installed, its %pre and %post scripts will be passed an argument equal to 1 otherwise an argument of 2 (or more depending on how many versions are installed) will be passed
+#
+# This can be helpful when writing scripts that should only run on first install for example
+#
+# e.g if [ $1 -gt 1 ]
+#     then
+#       exit 0
+#     fi
+#

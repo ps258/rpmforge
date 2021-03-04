@@ -1,0 +1,216 @@
+#!/bin/ksh
+ 
+base=$(dirname $(readlink -f $0))
+PATH=$PATH:$base
+base="$base/.."
+FPATH=$FPATH:$base/bin/functions
+ 
+## check if root user and abort if not
+#if [[ $(id -u) -ne 0 ]];then
+#  Fatal "You must be supersuer to create a new release"
+#fi
+ 
+usage() {
+cat <<USAGE
+Usage:
+$0  -r <release number> [-h] [-d]
+$0 -r 1.0.0
+ 
+-r      Define the release number (to match the release number generated from make-release
+-p      Define the package name
+-d      Check mode - print out but do not do anything
+-h      print out usage
+ 
+USAGE
+}
+ 
+while getopts r:hvd ans; do
+case "$ans" in
+  d) debug=1
+     ;;
+  h) usage
+     exit 0
+     ;;
+  r) PKG_VER="$OPTARG"
+     ;;
+  *) Error "Invalid option"
+     usage
+esac
+done
+ 
+if [[ -z "$PKG_VER" ]]; then
+  Error "script requires version number for packager to be defined\n"
+  usage
+  exit 1;
+fi
+ 
+# variable definitions
+PRE=""
+POST=""
+PREUN=""
+POSTUN=""
+PKG_DESC=""
+PKG_SUMM=""
+BASEDIR=$(pwd)
+#PKG_VER=$1
+PKG_REL=1
+REL_DIR="$BASEDIR/$PKG_VER"
+RPM_DIR="$REL_DIR/rpmbuild"
+SPECS_DIR="$RPM_DIR/SPECS"
+#RPM_FILES_DIR="$BASEDIR/rpmbuild"
+ 
+# if they do not exist - copy package creation files from $BASEDIR to $REL_DIR
+if [[ ! -d "$RPM_DIR" ]];then
+  run_cmd mkdir -p $RPM_DIR
+  run_cmd cp -R $BASEDIR/rpmbuild/rpm-* $RPM_DIR
+#  run_cmd cp -R $BASEDIR'/rpmbuild/rpm-*' $RPM_DIR
+else
+  Info "$RPM_DIR already exists - please delete and re-run $0 to update the generated rpm information\n\n"
+fi
+ 
+# get package name from rpmbuild/rpm-package file - this will ensure the package
+# name stays consistent across releases
+if [[ -f $RPM_DIR/rpm-package && $debug -eq 0 ]];then
+  PKG_NAME=$(cat $RPM_DIR/rpm-package)
+elif [[ $debug -gt 0 ]];then
+  PKG_NAME=default
+fi
+ 
+if [[ -z $PKG_NAME ]]; then
+  Error "No package name defined from ./rpmbuild/rpm-package file\n"
+  usage
+  exit 1;
+fi
+ 
+# define SPEC file name and location using variables above
+SPEC_FILE="$RPM_DIR/SPECS/$PKG_NAME.spec"
+ 
+# create pre/post (un)install/ depends vars from file in rpm-build
+[[ -f "$RPM_DIR/rpm-pre" ]] && PRE=$(<$RPM_DIR/rpm-pre)
+[[ -f "$RPM_DIR/rpm-post" ]] && POST=$(<$RPM_DIR/rpm-post)
+[[ -f "$RPM_DIR/rpm-preun" ]] && PREUN=$(<$RPM_DIR/rpm-preun)
+[[ -f "$RPM_DIR/rpm-postun" ]] && POSTUN=$(<$RPM_DIR/rpm-postun)
+[[ -f "$RPM_DIR/rpm-depends" ]] && PKG_DEPS=$(<$RPM_DIR/rpm-depends)
+[[ -f "$RPM_DIR/rpm-description" ]] && PKG_DESC=$(<$RPM_DIR/rpm-description)
+[[ -f "$RPM_DIR/rpm-summary" ]] && PKG_SUMM=$(<$RPM_DIR/rpm-summary)
+[[ -f "$RPM_DIR/rpm-arch" ]] && PKG_ARCH=$(grep -Ev '^#' $RPM_DIR/rpm-arch | tail -1)
+[[ -f "$RPM_DIR/rpm-os" ]] && PKG_OS=$(grep -Ev '^#' $RPM_DIR/rpm-os | tail -1)
+[[ -f "$RPM_DIR/rpm-dist" ]] && PKG_DIST=$(grep -Ev '^#' $RPM_DIR/rpm-dist | tail -1)
+[[ -f "$RPM_DIR/rpm-vendor" ]] && PKG_VENDOR=$(grep -Ev '^#' $RPM_DIR/rpm-vendor | tail -1)
+ 
+# set some defaults that need to always be defined
+PKG_OS=${PKG_OS-Linux}          # Usually Linux, but possibly AIX or IRIX
+PKG_ARCH=${PKG_ARCH-noarch}     # Usually x86-64
+PKG_DIST=${PKG_DIST-el5}        # Usually el5, but possibly el4 or sles
+ 
+# ensure that the files to be rpm'd are in the relevant release dir
+if [[ ! -d "$REL_DIR" && "$debug" -eq 0 ]];then
+  Error "the Release directory $REL_DIR does not exist"
+  Error "run make-release to generate the release directory $REL_DIR first"
+  exit 1;
+fi
+ 
+# create required dirs
+for dir in SOURCES SPECS SRPMS BUILD RPMS; do
+  run_cmd mkdir -p $RPM_DIR/$dir
+done
+run_cmd mkdir -p $RPM_DIR/RPMS/noarch
+run_cmd mkdir -p $RPM_DIR/RPMS/x86_64
+run_cmd mkdir -p $RPM_DIR/RPMS/ppc64
+ 
+#  generic spec file to get code from release dir
+if [[ "$debug" -eq 0 ]];then
+  cat > $SPEC_FILE <<SPEC
+#
+# spec file for package $PKG_NAME
+ 
+%define _topdir         $RPM_DIR
+%define rel_dir         $REL_DIR
+# %define basedir         /etc/pam
+ 
+%define packer %(finger -lp $(echo "$USER") | head -n 1 | cut -d: -f 3)
+ 
+Summary:   $PKG_SUMM
+Name:      $PKG_NAME
+Version:   $PKG_VER
+Release:   $PKG_REL
+License:   GPL
+Vendor:    $PKG_VENDOR
+Packager:  %packer
+Group:     System Environment/Shells
+BuildArch: $PKG_ARCH
+BuildRoot: %{_tmppath}/%{name}-%{version}-build
+# get dependencies / pre-requisistes from ./rpmbuild/rpm-depends file
+$PKG_DEPS
+ 
+%description
+$PKG_DESC
+ 
+#%prep
+# copy files into temporary rpm build location - this will be removed with %clean
+#cp -pR %rel_dir \$RPM_BUILD_ROOT
+# remove rpmbuild dir from temp rpm build location - it is not required
+#rm -rf \$RPM_BUILD_ROOT/rpmbuild
+ 
+%install
+# copy files into temporary rpm build location - this will be removed with %clean
+cp -pR %rel_dir/* \$RPM_BUILD_ROOT
+# remove rpmbuild dir from temp rpm build location - it is not required
+rm -rf \$RPM_BUILD_ROOT/rpmbuild
+#make DESTDIR=%buildroot install
+ 
+%clean
+[ \${RPM_BUILD_ROOT} != "/" ] && rm -rf \${RPM_BUILD_ROOT}
+ 
+%pre
+ 
+case "$PKG_DIST" in
+    el*)
+        # this package is for RHEL, check that we're running on RHEL
+        [ -f /etc/redhat-release ] || ( echo '[FATAL] This package is for $PKG_DIST only' && exit 1 )
+        ;;
+ 
+    sles*)
+        # this package is for SLES, check that we're running SLES
+        [ -f /etc/SuSE-release ] || ( echo '[FATAL] This package is for $PKG_DIST only' && exit 1 )
+        ;;
+ 
+    *)
+        # don't care what dist we're running on
+        ;;
+esac
+ 
+$PRE
+ 
+%post
+ 
+$POST
+ 
+%preun
+ 
+$PREUN
+ 
+%postun
+ 
+$POSTUN
+ 
+%files -f $RPM_DIR/rpm-files
+ 
+SPEC
+fi
+ 
+# generate rpm package into standard rpm dir
+ 
+#run_cmd rpmbuild -ba $SPEC_FILE --buildroot /var/tmp/$PKG_VER
+run_cmd rpmbuild --quiet --buildroot /var/tmp/$PKG_NAME-$PKG_VER-$PKG_REL.$PKG_ARCH -ba $SPEC_FILE
+# include error checking - only move file if rpmbuild was successful
+if [[ $? -eq 0 ]];then
+  [[ ! -d "$BASEDIR/release/" ]] && mkdir -p $BASEDIR/release # make release dir if doesn't exist
+  run_cmd mv $RPM_DIR/RPMS/$PKG_ARCH/$PKG_NAME-$PKG_VER-$PKG_REL.$PKG_ARCH.rpm $BASEDIR/release/$PKG_NAME-$PKG_VER-$PKG_REL.$PKG_DIST-$PKG_ARCH.rpm
+  if [[ $? -eq 0 ]];then
+    Info "RPM stored in $BASEDIR/release/$PKG_NAME-$PKG_VER-$PKG_REL.$PKG_DIST-$PKG_ARCH.rpm"
+  fi
+fi
+ 
+# tidy up
+#rm -f $SPEC_FILE

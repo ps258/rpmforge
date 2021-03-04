@@ -1,0 +1,14 @@
+function update_table {
+    # updates the table with the entry if it's not already there
+    # invoked with two parameters, the table to update and the line to check is in the table
+    [[ $# -lt 2 ]] && echo "[FATAL]$0 expects two arguments!" && exit 1
+    typeset table=$1
+    typeset line=$2
+    # create a regular expression from the line (just replace spaces with the regex for spaces)
+    RE=$(eval "echo '$line' | sed -e 's/[[:space:]]\+/[[:space:]]+/g'")
+    # anchor the regex to the start of the line so we don't match commented out lines
+    RE="^[[:space:]]*$RE"
+    # search for the regex, and add the line if it's not found
+    eval "egrep -q '$RE' $table" || echo "$line" >> $table
+    return $?
+}

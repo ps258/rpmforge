@@ -1,0 +1,39 @@
+function set_size {
+if [[ $# -ne 1 ]];then
+  Fatal "incorrect parameters passed to function $0"
+fi
+typeset _size=$1
+if [[ $_size = "all" ]];then
+  return
+fi
+# size should be in megabytes
+# if no letter in size varaible - assume value is megabytes
+if [[ $(echo $_size | grep -c "[[:alpha:]]") -gt 0 ]];then # size variable has letter
+  _unit=$(echo $_size | tr -d "[[:digit:]]\.") # get letter for case below
+  _size=$(echo $_size | sed -e "s/$_unit//") # get size with letter stripped
+  _unit=$(echo $_unit | tr -s "[A-Z]" "[a-z]") # convert unit to lowercase
+  case $_unit in
+    b) Info "block size specified. Multiplying by 512 and divide by 1024x1024 to get Mbytes"
+      (( _size=(_size*512) / 1048576 ))
+      ;;
+    g) Info "Gigabytes size specified. Multiply by 1024 to get MBytes"
+      (( _size=_size*1024 ))
+      ;;
+    k) Info "Kilobytes size specified. Divide by 1024 to get MBytes."
+      (( _size=_size/1024 ))
+      ;;
+    m) Info "Megabytes size specified"
+      ;;
+    s) Info "Sectors size specified. divide by 1024 to get MBytes"
+      (( _size=_size/1024 ))
+      ;;
+    *) Fatal "Error in size definition - please specify value in Megabytes"
+      ;;
+  esac
+fi
+if [[ $_size -lt 1 ]]; then # check if size is greater than 0 - error if not
+  Error "Size of logical volume must be greater than 0 ... exiting"
+fi
+size=$_size
+SIZE=$_size
+}

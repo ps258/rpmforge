@@ -1,0 +1,73 @@
+#!/bin/ksh
+#########################################################
+# script to create the template dirs for an RPm package
+# this will create the dir and copy in default
+# rpm definitiions from a template dir
+#########################################################
+ 
+progname=$(basename $0)
+base=$(dirname $(readlink -f $0))
+PATH=$PATH:$base
+base=$base/..
+FPATH=$FPATH:$base/bin/functions
+ 
+typeset -x LOGFILE=/tmp/${progname}-log.`date +%y%m%d`
+RETVAL=0
+template=$base/template
+packages=$base/packages
+if [[ ! -d $packages ]]
+then
+  mkdir -p $packages
+fi
+ 
+usage() {
+  cat <<USAGE
+Usage:
+$0  -r <package_name> [-h] [-d]
+$0 -r MQConnAgent
+ 
+  -r      Define the package name to be created
+  -h      print out usage
+ 
+USAGE
+}
+
+while getopts r:hd ans; do
+  case "$ans" in
+    h) usage
+    exit 0
+    ;;
+    r) package_name="$OPTARG"
+    ;;
+    *) print "Invalid option"
+    usage
+  esac
+done
+
+# script to generate the software release directory (to be used by packager to generate rpms)
+if [[ -z "$package_name" ]]; then
+  Error "you must define the package name\n"
+  usage
+  exit 1
+fi
+
+if mkdir -p $packages/$package_name/
+then
+  # Copy the template files from ../template to ../$package_name
+  if cp -R $template/* $packages/$package_name
+  then
+
+    # set directory perms
+    chmod 775 $packages/$package_name/rpmbuild $packages/$package_name/src $packages/$package_name/release
+
+    # Update the rpm-package name to match package name
+    sed -i 's/RPM_PACKAGE_NAME/'$package_name'/' $packages/$package_name/rpmbuild/rpm-package
+
+  else
+    Error "Unable to copy templates from $template to $packages/$package_name/"
+    exit 1
+  fi
+else
+  Error "Unable to mkdir $packages/$package_name"
+  exit 1
+fi

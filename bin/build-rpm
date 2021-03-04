@@ -1,0 +1,67 @@
+#!/bin/ksh
+ 
+# this prints the command to run make-release and packager all in one go so that you don't have to remember which
+# is which
+ 
+base=$(dirname $(readlink -f $0))
+PATH=$PATH:$base
+base="$base/.."
+FPATH=$FPATH:$base/bin/functions
+SRC=./src
+progname=$(basename $0)
+typeset -x LOGFILE=/tmp/${progname}-log.`date +%y%m%d`
+ 
+usage() {
+cat <<USAGE
+Create the RPM and all the gubbins
+Usage:
+$0  -r <release number> [-c] [-h] [-d] -l "<log entry>"
+$0 -r 1.0.0
+ 
+-r      Define the release number (should not have been used before)
+-c      Create the rpm-files required for the packaging
+-l      Changelog entry. Required
+-d      Check mode - print out but do not do anything
+-h      print out usage
+ 
+USAGE
+}
+ 
+if [ $# -le 2 ]
+then
+  usage
+  exit 1
+fi
+ 
+make_release_args=''
+packager_args=''
+ 
+while getopts l:r:hvcd ans; do
+case "$ans" in
+  c) rpmfiles_create=1
+     make_release_args="$make_release_args -c "
+     ;;
+  d) debug=1
+     make_release_args="$make_release_args -d"
+     packager_args="$packager_args -d"
+     ;;
+  h) usage
+     exit 0
+     ;;
+  r) VER="$OPTARG"
+     make_release_args="$make_release_args -r $VER"
+     packager_args="$packager_args -r $VER"
+     ;;
+  l) CHANGELOG="$OPTARG"
+     make_release_args="$make_release_args -l \"$CHANGELOG\""
+     ;;
+  *) print "Invalid option"
+     usage
+     exit 1
+esac
+done
+ 
+# too hard to get comments with spaces passed through so we just echo the commands
+echo Run these
+echo $(readlink -m ${base}/bin/make-release) $make_release_args
+echo $(readlink -m ${base}/bin/packager) $packager_args

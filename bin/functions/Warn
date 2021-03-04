@@ -1,0 +1,3 @@
+function Warn {
+  print "[WARN]: $*"
+}

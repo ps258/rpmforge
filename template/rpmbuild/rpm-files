@@ -1,0 +1,13 @@
+# Provide a list of all files and their permissions
+
+# Example 1
+# %defattr(<file mode>,<user>,<group>,<dir mode>)
+# This sets default file permissions for all files to use the permissions currently set in src/* and the owner to be user and group
+
+# Example 2
+# %attr(644,user,group) /tmp/testfile
+# This sets file permissions for /tmp/testfile to be 644 and the owner to be the specified user and group
+
+# If not setting individual permissions then list the package files as stored in the src/ directory. Omit the src directory in the path.
+# e.g. /tmp/testapp/*
+# These will get the default permissions specified with the %defattr satement
