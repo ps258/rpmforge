@@ -1,6 +1,9 @@
-This is the README for the RPM creation and generation scripts: Originally written by Karl Ingram
+# RPM creation and generation scripts
+** Originally written by Karl Ingram **
+
 These tools provide a common set of commands and templates for systems administrators to create and maintain RPMs (Redhat and AIX)
 
+## Usage
 To create a new RPM run 'bin/make-rpm-dirs -r <package>'. This will create packages/<package> and populate it with templates of all the files needed to create the basic RPM.
 
 <package>/src
@@ -16,13 +19,14 @@ The '<package>/rpmbuild' directory contains files that are used to contain thing
 Once the installable files and the associated scripts are in place, the 'build-rpm' shows what commands need to be run to take the current files in '<package>/src' and create a release directory based on the version number defined on the command line.  This release directory serves the place of revision control for the '<package>/src' directory.
 The version number needs to be in the format X.Y.Z (e.g. 1.0.1).  This directory is then used to package up the files under the correct version number.
 
-The commands in the 'bin' directory are
+## The commands in the 'bin' directory are
 
 make-rpm-dirs: Creates the directory structure for a new RPM build area and copies the templates into the '<package>/rpmbuild' directory
 build-rpm: Spits out the make-release and packager commands that you need to run to do the work
 All other files in the 'bin' directory are used by these two scripts.
 
 For example:
+```
 cd Company-GGVCSagent
 $ build-rpm -r 1.0.18 -l 'test build'
 Run these
@@ -33,6 +37,7 @@ LOG: creating ./1.0.18 dir
 $ ../../bin/packager -r 1.0.18
 [INFO]: RPM stored in ./release/Company-GoldenGateVCSagent-1.0.18-1.any-x86_64.rpm
 $
+```
 
 See build-rpm -h for help
 
@@ -46,18 +51,23 @@ The <tool>/rpmbuild directory will be where the specific install scripts / packa
 
 The format of the files is as if they were part of the rpm spec file.
 The pre/post(un)-install scripts the format is standard shell
+```
 if [[ -f /etc/file ]]; then
   print do the following
 fi
+```
 
 The format of the rpm-depends file is:
+```
 PreReq: sudo
 Conflicts:      pam
+```
 
 The format of name name of the rpm-package is
+```
 Company_package_name
+```
 
-#####
 # When things go wrong.
 
 The most common problem is that someone tries to rebuild using the same release. 
