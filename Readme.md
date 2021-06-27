@@ -4,7 +4,7 @@
 These tools provide a common set of commands and templates for systems administrators to create and maintain RPMs (Redhat and AIX)
 
 ## Usage
-To create a new RPM run 'bin/make-rpm-dirs -r <package>'. This will create packages/<package> and populate it with templates of all the files needed to create the basic RPM.
+To create a new RPM run `bin/make-rpm-dirs -r <package>`. This will create packages/<package> and populate it with templates of all the files needed to create the basic RPM.
 
 <package>/src
 <package>/release
@@ -12,18 +12,18 @@ To create a new RPM run 'bin/make-rpm-dirs -r <package>'. This will create packa
 
 where <package> is the name of the rpm to be created.
 
-The '<package>/src' directory is treated as the 'root' for your installed files. Place all your files in directories in it to have them installed when the rpm is installed
-The '<package>/release' directory contains the actual RPM that's built from your source files.
-The '<package>/rpmbuild' directory contains files that are used to contain things like the pre-install/post-install scripts and other RPM specific options. They each contain documentation to help the administrator to complete them appropriately.
+The `<package>/src` directory is treated as the `root` for your installed files. Place all your files in directories in it to have them installed when the rpm is installed
+The `<package>/release` directory contains the actual RPM that's built from your source files.
+The `<package>/rpmbuild` directory contains files that are used to contain things like the pre-install/post-install scripts and other RPM specific options. They each contain documentation to help the administrator to complete them appropriately.
 
-Once the installable files and the associated scripts are in place, the 'build-rpm' shows what commands need to be run to take the current files in '<package>/src' and create a release directory based on the version number defined on the command line.  This release directory serves the place of revision control for the '<package>/src' directory.
+Once the installable files and the associated scripts are in place, the `build-rpm` shows what commands need to be run to take the current files in `<package>/src` and create a release directory based on the version number defined on the command line.  This release directory serves the place of revision control for the `<package>/src` directory.
 The version number needs to be in the format X.Y.Z (e.g. 1.0.1).  This directory is then used to package up the files under the correct version number.
 
-## The commands in the 'bin' directory are
+## The commands in the `bin` directory are
 
-make-rpm-dirs: Creates the directory structure for a new RPM build area and copies the templates into the '<package>/rpmbuild' directory
+make-rpm-dirs: Creates the directory structure for a new RPM build area and copies the templates into the `<package>/rpmbuild` directory
 build-rpm: Spits out the make-release and packager commands that you need to run to do the work
-All other files in the 'bin' directory are used by these two scripts.
+All other files in the `bin` directory are used by these two scripts.
 
 For example:
 ```
