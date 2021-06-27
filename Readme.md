@@ -43,6 +43,7 @@ $
 
 See build-rpm -h for help
 
+```
 The <package>/rpmbuild directory will be where the specific install scripts / package name files will be kept
 <package>/rpmbuild/rpm-package     defines the package name
 <package>/rpmbuild/rpm-pre         defines the pre-install scripts for the rpm
@@ -50,9 +51,10 @@ The <package>/rpmbuild directory will be where the specific install scripts / pa
 <package>/rpmbuild/rpm-preun       defines the pre-uninstall scripts for the rpm
 <package>/rpmbuild/rpm-postun      defines the postun-install scripts for the rpm
 <package>/rpmbuild/rpm-depends     defines the dependencies for the rpm
+```
 
 The format of the files is as if they were part of the rpm spec file.
-The pre/post(un)-install scripts the format is standard shell
+The `pre/post(un)-install` scripts the format is standard shell
 ```
 if [[ -f /etc/file ]]; then
   print do the following
