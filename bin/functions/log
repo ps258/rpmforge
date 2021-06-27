@@ -1,0 +1,7 @@
+# log function to output to log file
+function log {
+if [[ -z $LOGFILE ]]; then
+  LOGFILE=/tmp/${0##*/}.log
+fi
+print $* >> $LOGFILE
+}
