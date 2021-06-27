@@ -1,5 +1,5 @@
 # RPM creation and generation scripts
-** Originally written by Karl Ingram **
+**Originally written by Karl Ingram**
 
 These tools provide a common set of commands and templates for systems administrators to create and maintain RPMs (Redhat and AIX)
 
