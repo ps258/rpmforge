@@ -4,13 +4,15 @@
 These tools provide a common set of commands and templates for systems administrators to create and maintain RPMs (Redhat and AIX)
 
 ## Usage
-To create a new RPM run `bin/make-rpm-dirs -r <package>`. This will create packages/<package> and populate it with templates of all the files needed to create the basic RPM.
+To create a new RPM run `bin/make-rpm-dirs -r <package>`. This will create `packages/<package>` and populate it with templates of all the files needed to create the basic RPM.
 
+```
 <package>/src
 <package>/release
 <package>/rpmbuild
+```
 
-where <package> is the name of the rpm to be created.
+where `<package>` is the name of the rpm to be created.
 
 The `<package>/src` directory is treated as the `root` for your installed files. Place all your files in directories in it to have them installed when the rpm is installed
 The `<package>/release` directory contains the actual RPM that's built from your source files.
@@ -41,13 +43,13 @@ $
 
 See build-rpm -h for help
 
-The <tool>/rpmbuild directory will be where the specific install scripts / package name files will be kept
-<tool>/rpmbuild/rpm-package     defines the package name
-<tool>/rpmbuild/rpm-pre         defines the pre-install scripts for the rpm
-<tool>/rpmbuild/rpm-post        defines the post-install scripts for the rpm
-<tool>/rpmbuild/rpm-preun       defines the pre-uninstall scripts for the rpm
-<tool>/rpmbuild/rpm-postun      defines the postun-install scripts for the rpm
-<tool>/rpmbuild/rpm-depends     defines the dependencies for the rpm
+The <package>/rpmbuild directory will be where the specific install scripts / package name files will be kept
+<package>/rpmbuild/rpm-package     defines the package name
+<package>/rpmbuild/rpm-pre         defines the pre-install scripts for the rpm
+<package>/rpmbuild/rpm-post        defines the post-install scripts for the rpm
+<package>/rpmbuild/rpm-preun       defines the pre-uninstall scripts for the rpm
+<package>/rpmbuild/rpm-postun      defines the postun-install scripts for the rpm
+<package>/rpmbuild/rpm-depends     defines the dependencies for the rpm
 
 The format of the files is as if they were part of the rpm spec file.
 The pre/post(un)-install scripts the format is standard shell
